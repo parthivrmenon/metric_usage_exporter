@@ -1,0 +1,13 @@
+.git
+.github
+.DS_Store
+docs
+docker
+grafana_com_assets
+testdata
+MyNotes.md
+*_test.go
+metric_usage_exporter
+metric_usage_exporter-*
+.env
+.env.local

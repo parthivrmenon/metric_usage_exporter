@@ -2,7 +2,7 @@
 #
 # These exist so the local stack has a usage source that lives in Prometheus
 # rather than in Grafana. node_filesystem_readonly appears in no provisioned
-# dashboard and no Grafana alert, so sigprune reports it as unused until
+# dashboard and no Grafana alert, so metric_usage_exporter reports it as unused until
 # Issue 2 counts rule_files as a usage source.
 groups:
   - name: node-exporter-alerts

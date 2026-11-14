@@ -1,4 +1,4 @@
-# Contributing to sigprune-exporter
+# Contributing to metric_usage_exporter
 
 Contributions are welcome. This project is in early development so please open an issue before starting significant work. PRs submitted without a prior issue or discussion will be closed.
 
@@ -39,4 +39,8 @@ docker compose -f docker/docker-compose.yml down -v
 ```
 
 Grafana is available at `http://localhost:3000` (admin/admin) and Prometheus at `http://localhost:9090`.
+
+## Releases
+
+Releases are cut by the maintainer. The full checklist, covering binaries, the Docker image and the Grafana dashboard, is in [RELEASE.md](RELEASE.md).
 

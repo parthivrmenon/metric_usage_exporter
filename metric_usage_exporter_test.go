@@ -6,17 +6,17 @@ import (
 	"testing"
 	"time"
 
-	sigprunetestutil "sigprune/internal/testutil"
-	"sigprune/pkg/utils"
+	mockgrafana "metric_usage_exporter/internal/testutil"
+	"metric_usage_exporter/pkg/utils"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 func TestCollectSuccess(t *testing.T) {
-	srv := sigprunetestutil.NewMockGrafanaServer()
+	srv := mockgrafana.NewMockGrafanaServer()
 	defer srv.Close()
 
-	exporter := NewExporter(5, srv.URL, sigprunetestutil.MockUser, sigprunetestutil.MockPassword, "", sigprunetestutil.MockDatasource, 1, 1, 10*time.Second)
+	exporter := NewExporter(5, srv.URL, mockgrafana.MockUser, mockgrafana.MockPassword, "", mockgrafana.MockDatasource, 1, 1, 10*time.Second)
 	exporter.scanner.RefreshOnce()
 
 	expected, err := os.Open("testdata/collect_success.txt")
@@ -26,21 +26,21 @@ func TestCollectSuccess(t *testing.T) {
 	defer expected.Close()
 
 	if err := testutil.CollectAndCompare(exporter, expected,
-		"sigprune_build_info",
-		"sigprune_prometheus_rule_count",
-		"sigprune_up",
-		"sigprune_unused_label_cardinality",
-		"sigprune_unused_metric_cardinality",
+		"metric_usage_build_info",
+		"metric_usage_prometheus_rule_count",
+		"metric_usage_up",
+		"metric_usage_unused_label_cardinality",
+		"metric_usage_unused_metric_cardinality",
 	); err != nil {
 		t.Errorf("unexpected metric output:\n%v", err)
 	}
 }
 
 func TestCollectError(t *testing.T) {
-	srv := sigprunetestutil.NewMockGrafanaServer()
+	srv := mockgrafana.NewMockGrafanaServer()
 	defer srv.Close()
 
-	exporter := NewExporter(5, srv.URL, "wronguser", "wrongpassword", "", sigprunetestutil.MockDatasource, 1, 1, 10*time.Second)
+	exporter := NewExporter(5, srv.URL, "wronguser", "wrongpassword", "", mockgrafana.MockDatasource, 1, 1, 10*time.Second)
 	exporter.scanner.RefreshOnce()
 
 	expected, err := os.Open("testdata/collect_error.txt")
@@ -50,19 +50,19 @@ func TestCollectError(t *testing.T) {
 	defer expected.Close()
 
 	if err := testutil.CollectAndCompare(exporter, expected,
-		"sigprune_build_info",
-		"sigprune_up",
+		"metric_usage_build_info",
+		"metric_usage_up",
 	); err != nil {
 		t.Errorf("unexpected metric output:\n%v", err)
 	}
 }
 
 // A failed refresh must keep serving the last successful snapshot, with
-// sigprune_up 0 reporting that the most recent attempt failed.
+// metric_usage_up 0 reporting that the most recent attempt failed.
 func TestCollectStaleSnapshotAfterFailure(t *testing.T) {
-	srv := sigprunetestutil.NewMockGrafanaServer()
+	srv := mockgrafana.NewMockGrafanaServer()
 
-	exporter := NewExporter(5, srv.URL, sigprunetestutil.MockUser, sigprunetestutil.MockPassword, "", sigprunetestutil.MockDatasource, 1, 1, 10*time.Second)
+	exporter := NewExporter(5, srv.URL, mockgrafana.MockUser, mockgrafana.MockPassword, "", mockgrafana.MockDatasource, 1, 1, 10*time.Second)
 	exporter.scanner.RefreshOnce() // succeeds: snapshot published
 
 	srv.Close()
@@ -75,11 +75,11 @@ func TestCollectStaleSnapshotAfterFailure(t *testing.T) {
 	defer expected.Close()
 
 	if err := testutil.CollectAndCompare(exporter, expected,
-		"sigprune_build_info",
-		"sigprune_prometheus_rule_count",
-		"sigprune_up",
-		"sigprune_unused_label_cardinality",
-		"sigprune_unused_metric_cardinality",
+		"metric_usage_build_info",
+		"metric_usage_prometheus_rule_count",
+		"metric_usage_up",
+		"metric_usage_unused_label_cardinality",
+		"metric_usage_unused_metric_cardinality",
 	); err != nil {
 		t.Errorf("unexpected metric output:\n%v", err)
 	}

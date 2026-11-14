@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	sigprunetestutil "sigprune/internal/testutil"
+	mockgrafana "metric_usage_exporter/internal/testutil"
 )
 
 var mockGrafanaServerURL string
 
 func TestMain(m *testing.M) {
-	srv := sigprunetestutil.NewMockGrafanaServer()
+	srv := mockgrafana.NewMockGrafanaServer()
 	mockGrafanaServerURL = srv.URL
 	code := m.Run()
 	srv.Close()
@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetUnusedMetricsAndLabelsWithLimit(t *testing.T) {
-	s := NewScanner(5, mockGrafanaServerURL, sigprunetestutil.MockUser, sigprunetestutil.MockPassword, "", sigprunetestutil.MockDatasource, 1, 1, 10*time.Second)
+	s := NewScanner(5, mockGrafanaServerURL, mockgrafana.MockUser, mockgrafana.MockPassword, "", mockgrafana.MockDatasource, 1, 1, 10*time.Second)
 	result, err := s.Scan()
 	if err != nil {
 		t.Fatalf("Did not expect err %v", err)
@@ -54,7 +54,7 @@ func TestGetUnusedMetricsAndLabelsWithLimit(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	s := NewScanner(5, mockGrafanaServerURL, sigprunetestutil.MockUser, sigprunetestutil.MockPassword, "", sigprunetestutil.MockDatasource, 5, 5, 10*time.Second)
+	s := NewScanner(5, mockGrafanaServerURL, mockgrafana.MockUser, mockgrafana.MockPassword, "", mockgrafana.MockDatasource, 5, 5, 10*time.Second)
 	result, err := s.Scan()
 	if err != nil {
 		t.Fatalf("Did not expect err %v", err)
@@ -162,7 +162,7 @@ func TestScan(t *testing.T) {
 }
 
 func TestScanUnauthorized(t *testing.T) {
-	s := NewScanner(5, mockGrafanaServerURL, "wronguser", "wrongpassword", "", sigprunetestutil.MockDatasource, 5, 5, 10*time.Second)
+	s := NewScanner(5, mockGrafanaServerURL, "wronguser", "wrongpassword", "", mockgrafana.MockDatasource, 5, 5, 10*time.Second)
 	_, err := s.Scan()
 	if err == nil {
 		t.Fatal("expected error for unauthorized request, got nil")

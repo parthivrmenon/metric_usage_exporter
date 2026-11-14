@@ -1,4 +1,4 @@
-module sigprune
+module metric_usage_exporter
 
 go 1.25.0
 

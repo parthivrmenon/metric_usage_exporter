@@ -1,6 +1,4 @@
-# sigprune-exporter
-
-**sigprune** *(n.)* — *"Signal Pruner"*
+# Metric Usage exporter
 
 A Prometheus exporter for detecting unused metrics and labels within a Grafana datasource.
 
@@ -13,24 +11,24 @@ The exporter allows you to visualize these unused metrics and labels in a Grafan
 
 ![Unused Metrics And Labels dashboard](docs/images/dashboard.png)
 
-A sample dashboard is included in `docker/grafana/provisioning/dashboards/sigprune.json` and is automatically provisioned when using the local Docker stack.
+A sample dashboard is included in `docker/grafana/provisioning/dashboards/metric_usage.json` and is automatically provisioned when using the local Docker stack.
 
 ### Importing the dashboard
 
-Import `docker/grafana/provisioning/dashboards/sigprune.json` from this repo, then pick your Prometheus datasource.
+Import `docker/grafana/provisioning/dashboards/metric_usage.json` from this repo, then pick your Prometheus datasource.
 
-**Note:** For the dashboard to work correctly the job that scrapes sigprune-exporter must set `honor_labels: true`
+**Note:** For the dashboard to work correctly the job that scrapes metric_usage_exporter must set `honor_labels: true`
 
 >
 > ```yaml
 > scrape_configs:
->   - job_name: "sigprune"
+>   - job_name: "metric_usage_exporter"
 >     honor_labels: true
 >     static_configs:
 >       - targets: ["localhost:8080"]
 > ```
 
-`sigprune_unused_metric_cardinality` and `sigprune_unused_label_cardinality` carry a `job` label naming the original job that collected the series. However, without `honor_labels` Prometheus overwrites it with `sigprune`, so every series reports the same job and the per-job breakdowns collapse into one number.
+`metric_usage_unused_metric_cardinality` and `metric_usage_unused_label_cardinality` carry a `job` label naming the original job that collected the series. However, without `honor_labels` Prometheus overwrites it with `metric_usage_exporter`, so every series reports the same job and the per-job breakdowns collapse into one number.
 
 
 ## Installation
@@ -40,8 +38,8 @@ Import `docker/grafana/provisioning/dashboards/sigprune.json` from this repo, th
 Pre-built binaries for Linux (amd64) and macOS (arm64 and amd64) are attached to each [release](https://github.com/parthivrmenon/sigprune-exporter/releases). Download the one for your platform, make it executable, and run it:
 
 ```bash
-chmod +x sigprune-exporter-linux-amd64
-./sigprune-exporter-linux-amd64 --help
+chmod +x metric_usage_exporter-linux-amd64
+./metric_usage_exporter-linux-amd64 --help
 ```
 
 ### Build from source
@@ -53,20 +51,20 @@ git clone https://github.com/parthivrmenon/sigprune-exporter.git
 cd sigprune-exporter
 go build \
   -ldflags "-X main.buildVersion=v0.1.0 -X main.buildRevision=$(git rev-parse --short HEAD)" \
-  -o sigprune-exporter .
+  -o metric_usage_exporter .
 ```
 
-This produces a `sigprune-exporter` binary in the current directory. The `buildVersion` and `buildRevision` flags are injected at build time and exposed via the `sigprune_build_info` metric.
+This produces a `metric_usage_exporter` binary in the current directory. The `buildVersion` and `buildRevision` flags are injected at build time and exposed via the `metric_usage_build_info` metric.
 
 ```bash
-./sigprune-exporter --help
+./metric_usage_exporter --help
 ```
 
 ## Running the exporter
 
 **Using Basic auth:**
 ```bash
-./sigprune-exporter \
+./metric_usage_exporter \
   -grafana http://localhost:3000 \
   -user admin \
   -password admin \
@@ -75,7 +73,7 @@ This produces a `sigprune-exporter` binary in the current directory. The `buildV
 
 **Using an API key:**
 ```bash
-./sigprune-exporter \
+./metric_usage_exporter \
   -grafana http://localhost:3000 \
   -api-key <grafana-api-key> \
   -datasource <prometheus-datasource-uid>
@@ -111,8 +109,8 @@ A scrape of `/metrics` serves the result of the latest successful scan and never
 
 This has a few consequences:
 - **Data can be up to one `-scan-interval` old** (longer if a scan fails or takes longer than the interval).
-- **Before the first scan completes**, `/metrics` exposes only `sigprune_build_info` and `sigprune_up 0`.
-- **If a scan fails**, the exporter keeps serving the last successful result and sets `sigprune_up` to `0` until a scan succeeds again.
+- **Before the first scan completes**, `/metrics` exposes only `metric_usage_build_info` and `metric_usage_up 0`.
+- **If a scan fails**, the exporter keeps serving the last successful result and sets `metric_usage_up` to `0` until a scan succeeds again.
 
 Dashboards and alert rules usually change over hours, not minutes, so the `5m` default is a reasonable. Try to avoid very short intervals against a production Grafana, since every scan fetches every dashboard.
 
@@ -121,20 +119,20 @@ Dashboards and alert rules usually change over hours, not minutes, so the `5m` d
 
 | Metric | Type | Labels | Description |
 |---|---|---|---|
-| `sigprune_build_info` | Gauge | `version`, `revision` | Always `1`. Exposes build version and git revision of the running binary |
-| `sigprune_up` | Gauge | — | `1` if the most recent background scan succeeded, `0` if it failed or no scan has completed yet. When `0` after a failure, the other metrics still show the last successful scan (see [How scanning works](#how-scanning-works)) |
-| `sigprune_unused_metric_cardinality` | Gauge | `job`, `metric` | Series count of a top-K unused metric (not referenced in any dashboard, Grafana alert rule or Prometheus rule) |
-| `sigprune_unused_label_cardinality` | Gauge | `job`, `label` | Series count of a top-K unused label (not referenced in any dashboard, Grafana alert rule or Prometheus rule) |
-| `sigprune_dashboard_count` | Gauge | — | Number of Grafana dashboards analyzed |
-| `sigprune_alert_rule_count` | Gauge | — | Number of Grafana alert rules analyzed |
-| `sigprune_prometheus_rule_count` | Gauge | — | Number of Prometheus alerting and recording rules analyzed |
-| `sigprune_total_tsdb_metrics` | Gauge | — | Number of metric names returned by the Prometheus TSDB status API, capped at `-tsdb-metrics-limit`. If it equals the limit, Prometheus likely has more metrics than were analyzed |
-| `sigprune_total_tsdb_labels` | Gauge | — | Number of label names returned by the Prometheus TSDB status API, capped at `-tsdb-metrics-limit` |
-| `sigprune_total_used_metrics` | Gauge | — | Number of distinct metric names referenced in dashboards, Grafana alert rules and Prometheus rules. A metric used in 20 panels counts once |
-| `sigprune_total_used_labels` | Gauge | — | Number of distinct label names referenced in dashboards, Grafana alert rules and Prometheus rules |
-| `sigprune_total_unused_metrics` | Gauge | — | Number of unused metrics exported, capped at `-metrics-limit`. Not a true total: if it equals `sigprune_metrics_export_limit`, there are likely more unused metrics |
-| `sigprune_total_unused_labels` | Gauge | — | Number of unused labels exported, capped at `-labels-limit`. Not a true total: if it equals `sigprune_labels_export_limit`, there are likely more unused labels |
-| `sigprune_metrics_export_limit` | Gauge | — | Configured value of `-metrics-limit` |
-| `sigprune_labels_export_limit` | Gauge | — | Configured value of `-labels-limit` |
+| `metric_usage_build_info` | Gauge | `version`, `revision` | Always `1`. Exposes build version and git revision of the running binary |
+| `metric_usage_up` | Gauge | — | `1` if the most recent background scan succeeded, `0` if it failed or no scan has completed yet. When `0` after a failure, the other metrics still show the last successful scan (see [How scanning works](#how-scanning-works)) |
+| `metric_usage_unused_metric_cardinality` | Gauge | `job`, `metric` | Series count of a top-K unused metric (not referenced in any dashboard, Grafana alert rule or Prometheus rule) |
+| `metric_usage_unused_label_cardinality` | Gauge | `job`, `label` | Series count of a top-K unused label (not referenced in any dashboard, Grafana alert rule or Prometheus rule) |
+| `metric_usage_dashboard_count` | Gauge | — | Number of Grafana dashboards analyzed |
+| `metric_usage_alert_rule_count` | Gauge | — | Number of Grafana alert rules analyzed |
+| `metric_usage_prometheus_rule_count` | Gauge | — | Number of Prometheus alerting and recording rules analyzed |
+| `metric_usage_tsdb_metrics` | Gauge | — | Number of metric names returned by the Prometheus TSDB status API, capped at `-tsdb-metrics-limit`. If it equals the limit, Prometheus likely has more metrics than were analyzed |
+| `metric_usage_tsdb_labels` | Gauge | — | Number of label names returned by the Prometheus TSDB status API, capped at `-tsdb-metrics-limit` |
+| `metric_usage_used_metrics` | Gauge | — | Number of distinct metric names referenced in dashboards, Grafana alert rules and Prometheus rules. A metric used in 20 panels counts once |
+| `metric_usage_used_labels` | Gauge | — | Number of distinct label names referenced in dashboards, Grafana alert rules and Prometheus rules |
+| `metric_usage_unused_metrics` | Gauge | — | Number of unused metrics exported, capped at `-metrics-limit`. Not a true total: if it equals `metric_usage_metrics_export_limit`, there are likely more unused metrics |
+| `metric_usage_unused_labels` | Gauge | — | Number of unused labels exported, capped at `-labels-limit`. Not a true total: if it equals `metric_usage_labels_export_limit`, there are likely more unused labels |
+| `metric_usage_metrics_export_limit` | Gauge | — | Configured value of `-metrics-limit` |
+| `metric_usage_labels_export_limit` | Gauge | — | Configured value of `-labels-limit` |
 
-Apart from `sigprune_build_info` and `sigprune_up`, every metric comes from the last successful background scan and is not exposed until the first scan completes (see [How scanning works](#how-scanning-works)).
+Apart from `metric_usage_build_info` and `metric_usage_up`, every metric comes from the last successful background scan and is not exposed until the first scan completes (see [How scanning works](#how-scanning-works)).

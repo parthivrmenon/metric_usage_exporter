@@ -1,6 +1,6 @@
-# HELP sigprune_build_info Build information
-# TYPE sigprune_build_info gauge
-sigprune_build_info{revision="unknown",version="dev"} 1
-# HELP sigprune_up Was the last background scan successful
-# TYPE sigprune_up gauge
-sigprune_up 0
+# HELP metric_usage_build_info Build information
+# TYPE metric_usage_build_info gauge
+metric_usage_build_info{revision="unknown",version="dev"} 1
+# HELP metric_usage_up Was the last background scan successful
+# TYPE metric_usage_up gauge
+metric_usage_up 0
