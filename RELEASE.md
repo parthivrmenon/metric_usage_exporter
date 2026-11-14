@@ -71,7 +71,7 @@ before publishing:
 ```bash
 ./metric_usage_exporter-darwin-arm64 --help | head -3
 # start it against the local stack (see CONTRIBUTING.md), then:
-curl -s localhost:8080/metrics | grep metric_usage_build_info
+curl -s localhost:10062/metrics | grep metric_usage_build_info
 # expect version="$VERSION" revision="$REV", not version="dev"
 ```
 
@@ -110,10 +110,10 @@ into the local daemon. `--load` can't take a multi-platform build.
 ```bash
 docker build --build-arg VERSION=$VERSION --build-arg REVISION=$REV \
   -t metric_usage_exporter:$VERSION .
-docker run --rm -p 8080:8080 metric_usage_exporter:$VERSION \
+docker run --rm -p 10062:10062 metric_usage_exporter:$VERSION \
   -grafana http://host.docker.internal:3000 -user admin -password admin \
   -datasource PBFA97CFB590B2093
-curl -s localhost:8080/metrics | grep metric_usage_build_info
+curl -s localhost:10062/metrics | grep metric_usage_build_info
 ```
 
 You have to set `-grafana` explicitly, because the default `http://localhost:3000`

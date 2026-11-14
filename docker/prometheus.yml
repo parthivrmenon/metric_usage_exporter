@@ -18,4 +18,4 @@ scrape_configs:
     honor_labels: true
     static_configs:
       # Exporter runs on the host machine; host.docker.internal resolves on macOS/Windows Docker Desktop
-      - targets: ["host.docker.internal:8080"]
+      - targets: ["host.docker.internal:10062"]

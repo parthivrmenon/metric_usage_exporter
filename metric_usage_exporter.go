@@ -285,7 +285,7 @@ func main() {
 	log.Println("starting metric_usage_exporter...")
 
 	var (
-		addr               = flag.String("listen-address", ":8080", "The address to listen on for HTTP requests.")
+		addr               = flag.String("listen-address", ":10062", "The address to listen on for HTTP requests.")
 		grafanaURL         = flag.String("grafana", "http://localhost:3000", "Grafana URL")
 		datasource         = flag.String("datasource", "", "Prometheus Datasource UID to collect metrics from")
 		tsdbMetricsLimit   = flag.Int("tsdb-metrics-limit", 10000, "Number of top metrics to analyze from TSDB status")
