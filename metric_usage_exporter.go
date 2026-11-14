@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"log"
+	"metric_usage_exporter/pkg/scanner"
 	"net/http"
-	"sigprune/pkg/scanner"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,7 +12,7 @@ import (
 )
 
 // Metric prefix
-const namespace = "sigprune"
+const namespace = "metric_usage"
 
 // Build Info
 var (
@@ -27,22 +27,22 @@ var (
 // - adding it to exporter's testdata/ golden files
 // - adding it to the README metrics table
 type Exporter struct {
-	scanner                             *scanner.Scanner
-	sigpruneBuildInfoDesc               *prometheus.Desc
-	sigpruneUpDesc                      *prometheus.Desc
-	sigpruneUnusedMetricCardinalityDesc *prometheus.Desc
-	sigpruneUnusedLabelCardinalityDesc  *prometheus.Desc
-	sigpruneDashboardCountDesc          *prometheus.Desc
-	sigpruneAlertRuleCountDesc          *prometheus.Desc
-	sigprunePrometheusRuleCountDesc     *prometheus.Desc
-	sigpruneTotalTSDBMetricsDesc        *prometheus.Desc
-	sigpruneTotalTSDBLabelsDesc         *prometheus.Desc
-	sigpruneTotalUsedMetricsDesc        *prometheus.Desc
-	sigpruneTotalUsedLabelsDesc         *prometheus.Desc
-	sigpruneTotalUnusedMetricsDesc      *prometheus.Desc
-	sigpruneTotalUnusedLabelsDesc       *prometheus.Desc
-	sigpruneMetricsExportLimitDesc      *prometheus.Desc
-	sigpruneLabelsExportLimitDesc       *prometheus.Desc
+	scanner                     *scanner.Scanner
+	buildInfoDesc               *prometheus.Desc
+	upDesc                      *prometheus.Desc
+	unusedMetricCardinalityDesc *prometheus.Desc
+	unusedLabelCardinalityDesc  *prometheus.Desc
+	dashboardCountDesc          *prometheus.Desc
+	alertRuleCountDesc          *prometheus.Desc
+	prometheusRuleCountDesc     *prometheus.Desc
+	totalTSDBMetricsDesc        *prometheus.Desc
+	totalTSDBLabelsDesc         *prometheus.Desc
+	totalUsedMetricsDesc        *prometheus.Desc
+	totalUsedLabelsDesc         *prometheus.Desc
+	totalUnusedMetricsDesc      *prometheus.Desc
+	totalUnusedLabelsDesc       *prometheus.Desc
+	metricsExportLimitDesc      *prometheus.Desc
+	labelsExportLimitDesc       *prometheus.Desc
 }
 
 func NewExporter(tsdbMetricsLimit int, grafanaURL string, adminUser string, adminPassword string, apiKey string, datasource string, exportLimitMetrics int, exportLimitLabels int, grafanaTimeout time.Duration) *Exporter {
@@ -58,91 +58,91 @@ func NewExporter(tsdbMetricsLimit int, grafanaURL string, adminUser string, admi
 			exportLimitLabels,
 			grafanaTimeout,
 		),
-		sigpruneBuildInfoDesc: prometheus.NewDesc(
+		buildInfoDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "build_info"),
 			"Build information",
 			[]string{"version", "revision"},
 			nil,
 		),
-		sigpruneUpDesc: prometheus.NewDesc(
+		upDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "up"),
 			"Was the last background scan successful",
 			nil,
 			nil,
 		),
-		sigpruneUnusedMetricCardinalityDesc: prometheus.NewDesc(
+		unusedMetricCardinalityDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "unused_metric_cardinality"),
 			"Series count of a top-K unused metric",
 			[]string{"job", "metric"},
 			nil,
 		),
-		sigpruneUnusedLabelCardinalityDesc: prometheus.NewDesc(
+		unusedLabelCardinalityDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "unused_label_cardinality"),
 			"Series count of a top-K unused label",
 			[]string{"job", "label"},
 			nil,
 		),
-		sigpruneDashboardCountDesc: prometheus.NewDesc(
+		dashboardCountDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "dashboard_count"),
 			"Number of Grafana dashboards analyzed for metric/label references",
 			nil,
 			nil,
 		),
-		sigpruneAlertRuleCountDesc: prometheus.NewDesc(
+		alertRuleCountDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "alert_rule_count"),
 			"Number of Grafana alert rules analyzed for metric/label references",
 			nil,
 			nil,
 		),
-		sigprunePrometheusRuleCountDesc: prometheus.NewDesc(
+		prometheusRuleCountDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "prometheus_rule_count"),
 			"Number of Prometheus rules analyzed for metric/label references",
 			nil,
 			nil,
 		),
-		sigpruneTotalTSDBMetricsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "total_tsdb_metrics"),
+		totalTSDBMetricsDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "tsdb_metrics"),
 			"Total number of metrics retrieved from TSDB status API (limited by tsdb-metrics-limit)",
 			nil,
 			nil,
 		),
-		sigpruneTotalTSDBLabelsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "total_tsdb_labels"),
+		totalTSDBLabelsDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "tsdb_labels"),
 			"Total number of labels retrieved from TSDB status API (limited by tsdb-metrics-limit)",
 			nil,
 			nil,
 		),
-		sigpruneTotalUsedMetricsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "total_used_metrics"),
+		totalUsedMetricsDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "used_metrics"),
 			"Number of unique metrics referenced in dashboards and rules",
 			nil,
 			nil,
 		),
-		sigpruneTotalUsedLabelsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "total_used_labels"),
+		totalUsedLabelsDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "used_labels"),
 			"Number of unique labels referenced in dashboards and rules",
 			nil,
 			nil,
 		),
-		sigpruneTotalUnusedMetricsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "total_unused_metrics"),
+		totalUnusedMetricsDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "unused_metrics"),
 			"Number of unused metrics identified in the last successful background scan (capped by export limit)",
 			nil,
 			nil,
 		),
-		sigpruneTotalUnusedLabelsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, "", "total_unused_labels"),
+		totalUnusedLabelsDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "unused_labels"),
 			"Number of unused labels identified in the last successful background scan (capped by export limit)",
 			nil,
 			nil,
 		),
-		sigpruneMetricsExportLimitDesc: prometheus.NewDesc(
+		metricsExportLimitDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "metrics_export_limit"),
 			"Configured limit on number of unused metrics to export (metrics-limit flag)",
 			nil,
 			nil,
 		),
-		sigpruneLabelsExportLimitDesc: prometheus.NewDesc(
+		labelsExportLimitDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "labels_export_limit"),
 			"Configured limit on number of unused labels to export (labels-limit flag)",
 			nil,
@@ -152,27 +152,27 @@ func NewExporter(tsdbMetricsLimit int, grafanaURL string, adminUser string, admi
 }
 
 func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
-	ch <- e.sigpruneBuildInfoDesc
-	ch <- e.sigpruneUpDesc
-	ch <- e.sigpruneUnusedMetricCardinalityDesc
-	ch <- e.sigpruneUnusedLabelCardinalityDesc
-	ch <- e.sigpruneDashboardCountDesc
-	ch <- e.sigpruneAlertRuleCountDesc
-	ch <- e.sigprunePrometheusRuleCountDesc
-	ch <- e.sigpruneTotalTSDBMetricsDesc
-	ch <- e.sigpruneTotalTSDBLabelsDesc
-	ch <- e.sigpruneTotalUsedMetricsDesc
-	ch <- e.sigpruneTotalUsedLabelsDesc
-	ch <- e.sigpruneTotalUnusedMetricsDesc
-	ch <- e.sigpruneTotalUnusedLabelsDesc
-	ch <- e.sigpruneMetricsExportLimitDesc
-	ch <- e.sigpruneLabelsExportLimitDesc
+	ch <- e.buildInfoDesc
+	ch <- e.upDesc
+	ch <- e.unusedMetricCardinalityDesc
+	ch <- e.unusedLabelCardinalityDesc
+	ch <- e.dashboardCountDesc
+	ch <- e.alertRuleCountDesc
+	ch <- e.prometheusRuleCountDesc
+	ch <- e.totalTSDBMetricsDesc
+	ch <- e.totalTSDBLabelsDesc
+	ch <- e.totalUsedMetricsDesc
+	ch <- e.totalUsedLabelsDesc
+	ch <- e.totalUnusedMetricsDesc
+	ch <- e.totalUnusedLabelsDesc
+	ch <- e.metricsExportLimitDesc
+	ch <- e.labelsExportLimitDesc
 
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneBuildInfoDesc,
+		e.buildInfoDesc,
 		prometheus.GaugeValue,
 		1,
 		buildVersion,
@@ -184,7 +184,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	// Cold start: no successful scan yet. Emit an empty result
 	if snap == nil {
-		ch <- prometheus.MustNewConstMetric(e.sigpruneUpDesc, prometheus.GaugeValue, 0)
+		ch <- prometheus.MustNewConstMetric(e.upDesc, prometheus.GaugeValue, 0)
 		return
 	}
 
@@ -195,7 +195,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		up = 0
 	}
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneUpDesc,
+		e.upDesc,
 		prometheus.GaugeValue,
 		up,
 	)
@@ -203,7 +203,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	for metric, perJobCount := range snap.UnusedMetrics {
 		for job, count := range perJobCount {
 			ch <- prometheus.MustNewConstMetric(
-				e.sigpruneUnusedMetricCardinalityDesc,
+				e.unusedMetricCardinalityDesc,
 				prometheus.GaugeValue,
 				float64(count),
 				job, metric,
@@ -215,7 +215,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	for label, perJobCount := range snap.UnusedLabels {
 		for job, count := range perJobCount {
 			ch <- prometheus.MustNewConstMetric(
-				e.sigpruneUnusedLabelCardinalityDesc,
+				e.unusedLabelCardinalityDesc,
 				prometheus.GaugeValue,
 				float64(count),
 				job, label,
@@ -225,64 +225,64 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneDashboardCountDesc,
+		e.dashboardCountDesc,
 		prometheus.GaugeValue,
 		float64(snap.DashboardCount),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneAlertRuleCountDesc,
+		e.alertRuleCountDesc,
 		prometheus.GaugeValue,
 		float64(snap.AlertRuleCount),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigprunePrometheusRuleCountDesc,
+		e.prometheusRuleCountDesc,
 		prometheus.GaugeValue,
 		float64(snap.PrometheusRuleCount),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneTotalTSDBMetricsDesc,
+		e.totalTSDBMetricsDesc,
 		prometheus.GaugeValue,
 		float64(snap.TotalTSDBMetrics),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneTotalTSDBLabelsDesc,
+		e.totalTSDBLabelsDesc,
 		prometheus.GaugeValue,
 		float64(snap.TotalTSDBLabels),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneTotalUsedMetricsDesc,
+		e.totalUsedMetricsDesc,
 		prometheus.GaugeValue,
 		float64(snap.TotalUsedMetrics),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneTotalUsedLabelsDesc,
+		e.totalUsedLabelsDesc,
 		prometheus.GaugeValue,
 		float64(snap.TotalUsedLabels),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneTotalUnusedMetricsDesc,
+		e.totalUnusedMetricsDesc,
 		prometheus.GaugeValue,
 		float64(snap.TotalUnusedMetrics),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneTotalUnusedLabelsDesc,
+		e.totalUnusedLabelsDesc,
 		prometheus.GaugeValue,
 		float64(snap.TotalUnusedLabels),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneMetricsExportLimitDesc,
+		e.metricsExportLimitDesc,
 		prometheus.GaugeValue,
 		float64(snap.MetricsExportLimit),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		e.sigpruneLabelsExportLimitDesc,
+		e.labelsExportLimitDesc,
 		prometheus.GaugeValue,
 		float64(snap.LabelsExportLimit),
 	)
 }
 
 func main() {
-	log.Println("starting sigprune-exporter...")
+	log.Println("starting metric_usage_exporter...")
 
 	var (
 		addr               = flag.String("listen-address", ":8080", "The address to listen on for HTTP requests.")

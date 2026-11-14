@@ -2,8 +2,8 @@ package scanner
 
 import (
 	"log"
-	"sigprune/pkg/grafana"
-	"sigprune/pkg/utils"
+	"metric_usage_exporter/pkg/grafana"
+	"metric_usage_exporter/pkg/utils"
 	"strings"
 	"sync"
 	"time"

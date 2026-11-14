@@ -3,7 +3,7 @@ package grafana
 import "fmt"
 
 // PrometheusRules is the subset of a Prometheus /api/v1/rules response that
-// sigprune reads. The API returns a great deal more per rule - state, duration,
+// metric_usage_exporter reads. The API returns a great deal more per rule - state, duration,
 // labels, annotations, health, timings - and encoding/json drops every field not
 // named here, so only what gets used is declared.
 type PrometheusRules struct {

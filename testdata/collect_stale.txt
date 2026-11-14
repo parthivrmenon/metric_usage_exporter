@@ -1,16 +1,16 @@
-# HELP sigprune_build_info Build information
-# TYPE sigprune_build_info gauge
-sigprune_build_info{revision="unknown",version="dev"} 1
-# HELP sigprune_prometheus_rule_count Number of Prometheus rules analyzed for metric/label references
-# TYPE sigprune_prometheus_rule_count gauge
-sigprune_prometheus_rule_count 2
-# HELP sigprune_unused_label_cardinality Series count of a top-K unused label
-# TYPE sigprune_unused_label_cardinality gauge
-sigprune_unused_label_cardinality{job="node-exporter",label="handler"} 59
-sigprune_unused_label_cardinality{job="prometheus",label="handler"} 65
-# HELP sigprune_unused_metric_cardinality Series count of a top-K unused metric
-# TYPE sigprune_unused_metric_cardinality gauge
-sigprune_unused_metric_cardinality{job="prometheus",metric="prometheus_http_requests_total"} 65
-# HELP sigprune_up Was the last background scan successful
-# TYPE sigprune_up gauge
-sigprune_up 0
+# HELP metric_usage_build_info Build information
+# TYPE metric_usage_build_info gauge
+metric_usage_build_info{revision="unknown",version="dev"} 1
+# HELP metric_usage_prometheus_rule_count Number of Prometheus rules analyzed for metric/label references
+# TYPE metric_usage_prometheus_rule_count gauge
+metric_usage_prometheus_rule_count 2
+# HELP metric_usage_unused_label_cardinality Series count of a top-K unused label
+# TYPE metric_usage_unused_label_cardinality gauge
+metric_usage_unused_label_cardinality{job="node-exporter",label="handler"} 59
+metric_usage_unused_label_cardinality{job="prometheus",label="handler"} 65
+# HELP metric_usage_unused_metric_cardinality Series count of a top-K unused metric
+# TYPE metric_usage_unused_metric_cardinality gauge
+metric_usage_unused_metric_cardinality{job="prometheus",metric="prometheus_http_requests_total"} 65
+# HELP metric_usage_up Was the last background scan successful
+# TYPE metric_usage_up gauge
+metric_usage_up 0
