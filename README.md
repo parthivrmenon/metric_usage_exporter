@@ -24,6 +24,20 @@ chmod +x metric_usage_exporter-linux-amd64
 ./metric_usage_exporter-linux-amd64 --help
 ```
 
+### Run with Docker
+
+Multi-arch images (`linux/amd64`, `linux/arm64`) are published to GitHub Container Registry:
+
+```bash
+docker run -d --name metric_usage_exporter -p 10062:10062 \
+  ghcr.io/parthivrmenon/metric_usage_exporter:v0.2.0 \
+  -grafana https://grafana.example.com \
+  -api-key <grafana-service-account-token> \
+  -datasource <prometheus-datasource-uid>
+```
+
+Set `-grafana` explicitly: the default `http://localhost:3000` points at the container itself. To reach a Grafana running on the Docker host, use `http://host.docker.internal:3000` (Docker Desktop) or add `--add-host=host.docker.internal:host-gateway` on Linux.
+
 ### Build from source
 
 **Requires** [Go](https://go.dev/dl/) 1.25+
