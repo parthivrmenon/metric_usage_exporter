@@ -4,7 +4,7 @@ Contributions are welcome. This project is in early development so please open a
 
 ## Reporting Issues
 
-Open a [GitHub Issue](https://github.com/parthivrmenon/sigprune-exporter/issues) for:
+Open a [GitHub Issue](https://github.com/parthivrmenon/metric_usage_exporter/issues) for:
 - Bug reports
 - Feature requests or suggestions
 
@@ -19,8 +19,8 @@ Open a [GitHub Issue](https://github.com/parthivrmenon/sigprune-exporter/issues)
 ## Development Setup
 
 ```bash
-git clone https://github.com/parthivrmenon/sigprune-exporter.git
-cd sigprune-exporter
+git clone https://github.com/parthivrmenon/metric_usage_exporter.git
+cd metric_usage_exporter
 go build ./...
 go test ./...
 ```

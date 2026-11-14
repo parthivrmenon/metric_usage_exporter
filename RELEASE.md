@@ -10,7 +10,7 @@ them are built from the same tagged commit:
 Set the version once at the start. Every step below uses it:
 
 ```bash
-VERSION=v0.1.1
+VERSION=v0.2.0
 ```
 
 A pushed tag and its release are effectively permanent once anyone has downloaded
@@ -141,7 +141,7 @@ Skip this step if the dashboard didn't change in this release.
 Confirm that the README's download and Docker instructions actually work:
 
 ```bash
-curl -sIL https://github.com/parthivrmenon/sigprune-exporter/releases/latest/download/metric_usage_exporter-linux-amd64 | tail -2
+curl -sIL https://github.com/parthivrmenon/metric_usage_exporter/releases/latest/download/metric_usage_exporter-linux-amd64 | tail -2
 
 # Pull while logged out, which proves the package is public
 docker logout ghcr.io
