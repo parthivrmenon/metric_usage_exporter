@@ -24,6 +24,6 @@ FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY --from=build /out/metric_usage_exporter /metric_usage_exporter
 
-EXPOSE 8080
+EXPOSE 10062
 USER nonroot:nonroot
 ENTRYPOINT ["/metric_usage_exporter"]

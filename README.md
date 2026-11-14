@@ -72,7 +72,7 @@ scrape_configs:
   - job_name: "metric_usage_exporter"
     honor_labels: true
     static_configs:
-      - targets: ["localhost:8080"]
+      - targets: ["localhost:10062"]
 ```
 
 `metric_usage_unused_metric_cardinality` and `metric_usage_unused_label_cardinality` carry a `job` label naming the original job that collected the series. Without `honor_labels`, Prometheus overwrites it with the exporter's own job name, so every series reports the same job and per-job breakdowns collapse into one number. This affects any query you write against these metrics, not just the dashboard.
@@ -90,7 +90,7 @@ Import `docker/grafana/provisioning/dashboards/metric_usage.json` from this repo
 | `-password` | Password for basic auth | *(required with `-user`, unless using `-api-key`)* |
 | `-api-key` | Grafana service account token (or legacy API key) for authentication | *(required, unless using `-user`/`-password`)* |
 | `-datasource` | Prometheus datasource UID to collect metrics from | *(required)* |
-| `-listen-address` | Address to listen on for HTTP requests | `:8080` |
+| `-listen-address` | Address to listen on for HTTP requests | `:10062` |
 | `-tsdb-metrics-limit` | Number of top metrics to analyze from TSDB status | `10000` |
 | `-metrics-limit` | Limit the number of unused metrics to export | `50` |
 | `-labels-limit` | Limit the number of unused labels to export | `10` |
