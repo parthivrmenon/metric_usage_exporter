@@ -1,8 +1,8 @@
-# Metric Usage exporter
+# Metric Usage Exporter
 
-A Prometheus exporter for detecting unused metrics and labels within a Grafana datasource.
+A Prometheus exporter for detecting unused metrics and labels in a Prometheus datasource in Grafana.
 
-A metric/label is considered 'unused' if:
+A metric/label is deemed 'unused' if:
 - it does not appear in any Grafana Dashboard
 - it does not appear in any Grafana Alert Rule
 - it does not appear in any Prometheus alerting or recording rule
@@ -11,31 +11,13 @@ The exporter allows you to visualize these unused metrics and labels in a Grafan
 
 ![Unused Metrics And Labels dashboard](docs/images/dashboard.png)
 
-A sample dashboard is included in `docker/grafana/provisioning/dashboards/metric_usage.json` and is automatically provisioned when using the local Docker stack.
-
-### Importing the dashboard
-
-Import `docker/grafana/provisioning/dashboards/metric_usage.json` from this repo, then pick your Prometheus datasource.
-
-**Note:** For the dashboard to work correctly the job that scrapes metric_usage_exporter must set `honor_labels: true`
-
->
-> ```yaml
-> scrape_configs:
->   - job_name: "metric_usage_exporter"
->     honor_labels: true
->     static_configs:
->       - targets: ["localhost:8080"]
-> ```
-
-`metric_usage_unused_metric_cardinality` and `metric_usage_unused_label_cardinality` carry a `job` label naming the original job that collected the series. However, without `honor_labels` Prometheus overwrites it with `metric_usage_exporter`, so every series reports the same job and the per-job breakdowns collapse into one number.
-
+The dashboard is provisioned automatically in the local Docker stack (see [CONTRIBUTING.md](CONTRIBUTING.md)); to add it to your own Grafana, see [Dashboard](#dashboard).
 
 ## Installation
 
 ### Download a release binary
 
-Pre-built binaries for Linux (amd64) and macOS (arm64 and amd64) are attached to each [release](https://github.com/parthivrmenon/sigprune-exporter/releases). Download the one for your platform, make it executable, and run it:
+Pre-built binaries for Linux (amd64) and macOS (arm64 and amd64) are attached to each [release](https://github.com/parthivrmenon/metric_usage_exporter/releases). Download the one for your platform, make it executable, and run it:
 
 ```bash
 chmod +x metric_usage_exporter-linux-amd64
@@ -47,10 +29,10 @@ chmod +x metric_usage_exporter-linux-amd64
 **Requires** [Go](https://go.dev/dl/) 1.25+
 
 ```bash
-git clone https://github.com/parthivrmenon/sigprune-exporter.git
-cd sigprune-exporter
+git clone https://github.com/parthivrmenon/metric_usage_exporter.git
+cd metric_usage_exporter
 go build \
-  -ldflags "-X main.buildVersion=v0.1.0 -X main.buildRevision=$(git rev-parse --short HEAD)" \
+  -ldflags "-X main.buildVersion=$(git describe --tags --always) -X main.buildRevision=$(git rev-parse --short HEAD)" \
   -o metric_usage_exporter .
 ```
 
@@ -79,7 +61,25 @@ This produces a `metric_usage_exporter` binary in the current directory. The `bu
   -datasource <prometheus-datasource-uid>
 ```
 
-See [Configuration](#configuration) for the full list.
+See [Configuration](#configuration) for the full list of options.
+
+## Scraping with Prometheus
+
+The job that scrapes the exporter must set `honor_labels: true`:
+
+```yaml
+scrape_configs:
+  - job_name: "metric_usage_exporter"
+    honor_labels: true
+    static_configs:
+      - targets: ["localhost:8080"]
+```
+
+`metric_usage_unused_metric_cardinality` and `metric_usage_unused_label_cardinality` carry a `job` label naming the original job that collected the series. Without `honor_labels`, Prometheus overwrites it with the exporter's own job name, so every series reports the same job and per-job breakdowns collapse into one number. This affects any query you write against these metrics, not just the dashboard.
+
+## Dashboard
+
+Import `docker/grafana/provisioning/dashboards/metric_usage.json` from this repo, then pick your Prometheus datasource. The per-job panels rely on the `honor_labels` setting above.
 
 ## Configuration
 
@@ -88,7 +88,7 @@ See [Configuration](#configuration) for the full list.
 | `-grafana` | Grafana URL | `http://localhost:3000` |
 | `-user` | Username for basic auth | *(required with `-password`, unless using `-api-key`)* |
 | `-password` | Password for basic auth | *(required with `-user`, unless using `-api-key`)* |
-| `-api-key` | Grafana API key for authentication | *(required, unless using `-user`/`-password`)* |
+| `-api-key` | Grafana service account token (or legacy API key) for authentication | *(required, unless using `-user`/`-password`)* |
 | `-datasource` | Prometheus datasource UID to collect metrics from | *(required)* |
 | `-listen-address` | Address to listen on for HTTP requests | `:8080` |
 | `-tsdb-metrics-limit` | Number of top metrics to analyze from TSDB status | `10000` |
@@ -97,13 +97,13 @@ See [Configuration](#configuration) for the full list.
 | `-scan-interval` | How often to rescan Grafana and Prometheus in the background. Takes a Go duration such as `30s`, `5m` or `1h30m` | `5m` |
 | `-grafana-timeout` | Timeout for each HTTP request to Grafana, including Prometheus queries sent through Grafana's datasource proxy. Takes a Go duration | `60s` |
 
-> **Note:** 
+> **Note:**
 > - Increasing `labels-limit` makes each background scan take longer. Each label adds one sequential Prometheus API call to fetch per-job series counts.
-> - Prometheus queries go through Grafana's datasource proxy, which has its own timeout which is 30 seconds by default. Setting `-grafana-timeout` above that has no effect on those queries unless you also raise Grafana's setting as well.
+> - Prometheus queries go through Grafana's datasource proxy, which has its own timeout (30s by default). Raising `-grafana-timeout` above it has no effect on those queries unless you raise Grafana's too.
 
 ### How scanning works
 
-The exporter scans Grafana and Prometheus in the background, once at startup, then every `-scan-interval`. 
+The exporter scans Grafana and Prometheus in the background, once at startup, then every `-scan-interval`.
 
 A scrape of `/metrics` serves the result of the latest successful scan and never waits for a scan to run, so scrape latency stays small regardless of how many dashboards and alert rules Grafana has.
 
@@ -112,8 +112,7 @@ This has a few consequences:
 - **Before the first scan completes**, `/metrics` exposes only `metric_usage_build_info` and `metric_usage_up 0`.
 - **If a scan fails**, the exporter keeps serving the last successful result and sets `metric_usage_up` to `0` until a scan succeeds again.
 
-Dashboards and alert rules usually change over hours, not minutes, so the `5m` default is a reasonable. Try to avoid very short intervals against a production Grafana, since every scan fetches every dashboard.
-
+Dashboards and alert rules usually change over hours, not minutes, so the `5m` default is reasonable. Try to avoid very short intervals against a production Grafana, since every scan fetches every dashboard.
 
 ## Metrics Reference
 
