@@ -121,8 +121,9 @@ points at the container itself. `host.docker.internal` reaches the host on Docke
 Desktop.
 
 **First push only:** GHCR creates the package as private. Make it public under
-GitHub → Packages → metric_usage_exporter → Package settings → Change visibility, and
-link it to the repository so it shows up on the repo page.
+GitHub → Packages → metric_usage_exporter → Package settings → Change visibility. The
+`org.opencontainers.image.source` label in the `Dockerfile` links the package to the
+repository, so it shows up on the repo page.
 
 ## 8. Dashboard
 

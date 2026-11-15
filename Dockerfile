@@ -22,6 +22,9 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
 # a non-root user, with no shell or package manager.
 FROM gcr.io/distroless/static-debian12:nonroot
 
+# Links the GHCR package to the repository.
+LABEL org.opencontainers.image.source=https://github.com/parthivrmenon/metric_usage_exporter
+
 COPY --from=build /out/metric_usage_exporter /metric_usage_exporter
 
 EXPOSE 10062
