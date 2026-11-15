@@ -9,7 +9,7 @@ A metric/label is deemed 'unused' if:
 
 The exporter allows you to visualize these unused metrics and labels in a Grafana dashboard like the one below:
 
-![Unused Metrics And Labels dashboard](docs/images/dashboard.png)
+![Unused Metrics And Labels dashboard](docs/images/dashboard_v2.png)
 
 The dashboard is provisioned automatically in the local Docker stack (see [CONTRIBUTING.md](CONTRIBUTING.md)); to add it to your own Grafana, see [Dashboard](#dashboard).
 
