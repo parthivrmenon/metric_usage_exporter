@@ -1,0 +1,114 @@
+{{- include "metric-usage-exporter.validate" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "metric-usage-exporter.fullname" . }}
+  labels:
+    {{- include "metric-usage-exporter.labels" . | nindent 4 }}
+spec:
+  # A single replica: extra replicas would scan Grafana repeatedly and export duplicate series.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "metric-usage-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if not .Values.grafana.auth.existingSecret }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "metric-usage-exporter.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "metric-usage-exporter.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          args:
+            - -listen-address=:{{ .Values.service.port }}
+            - -grafana={{ required "grafana.url is required" .Values.grafana.url }}
+            - -datasource={{ required "grafana.datasource is required (the Prometheus datasource UID)" .Values.grafana.datasource }}
+            {{- if eq .Values.grafana.auth.type "apiKey" }}
+            - -api-key=$(GRAFANA_API_KEY)
+            {{- else }}
+            - -user=$(GRAFANA_USER)
+            - -password=$(GRAFANA_PASSWORD)
+            {{- end }}
+            {{- with .Values.exporter }}
+            - -tsdb-metrics-limit={{ .tsdbMetricsLimit }}
+            - -metrics-limit={{ .metricsLimit }}
+            - -labels-limit={{ .labelsLimit }}
+            - -scan-interval={{ .scanInterval }}
+            - -grafana-timeout={{ .grafanaTimeout }}
+            {{- range .extraArgs }}
+            - {{ . | quote }}
+            {{- end }}
+            {{- end }}
+          env:
+            {{- with .Values.grafana.auth }}
+            {{- if eq .type "apiKey" }}
+            - name: GRAFANA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metric-usage-exporter.secretName" $ }}
+                  key: {{ .secretKeys.apiKey }}
+            {{- else }}
+            - name: GRAFANA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metric-usage-exporter.secretName" $ }}
+                  key: {{ .secretKeys.user }}
+            - name: GRAFANA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "metric-usage-exporter.secretName" $ }}
+                  key: {{ .secretKeys.password }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

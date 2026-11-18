@@ -1,0 +1,22 @@
+apiVersion: v2
+name: metric-usage-exporter
+description: A Prometheus exporter for detecting unused metrics and labels in a Prometheus datasource in Grafana
+type: application
+version: 0.1.0
+appVersion: "v0.2.0"
+kubeVersion: ">=1.23.0-0"
+home: https://github.com/parthivrmenon/metric_usage_exporter/tree/main/charts/metric-usage-exporter
+sources:
+  - https://github.com/parthivrmenon/metric_usage_exporter
+keywords:
+  - prometheus
+  - exporter
+  - metric-usage
+  - unused-metrics
+  - cardinality
+  - grafana
+maintainers:
+  - name: Parthiv Roshan Menon
+    url: https://github.com/parthivrmenon
+annotations:
+  artifacthub.io/license: MIT

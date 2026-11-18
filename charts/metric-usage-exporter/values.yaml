@@ -1,0 +1,294 @@
+# Default values for metric-usage-exporter.
+# This is a YAML-formatted file. Override values with -f my-values.yaml or --set key=value.
+
+## Override the chart name used in resource names
+##
+nameOverride: ""
+
+## Override the full name of all resources (default: <release>-<chart>)
+##
+fullnameOverride: ""
+
+## Exporter image
+## Published as multi-arch (linux/amd64, linux/arm64) images on GHCR.
+## ref: https://github.com/parthivrmenon/metric_usage_exporter/pkgs/container/metric_usage_exporter
+##
+image:
+  repository: ghcr.io/parthivrmenon/metric_usage_exporter
+  ## Image tag. Leave empty to use the chart's appVersion.
+  ##
+  tag: ""
+  # tag: v0.2.0
+  pullPolicy: IfNotPresent
+
+## Secrets for pulling the image from a private registry or mirror
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+##
+imagePullSecrets: []
+# - name: my-registry-credentials
+
+## Grafana connection
+## The exporter reads dashboards, alert rules and the Prometheus datasource through Grafana.
+## It checks the connection at startup and exits if it fails, so a wrong URL, token or
+## datasource UID shows up as CrashLoopBackOff. Check `kubectl logs` for the reason.
+##
+grafana:
+  ## Grafana URL, reachable from inside the cluster. Required.
+  ##
+  url: ""
+  # url: http://grafana.monitoring.svc:3000
+  # url: https://grafana.example.com
+
+  ## UID of the Prometheus datasource to analyze. Required.
+  ## Find it in Grafana under Connections > Data sources > <datasource>: the UID is the last
+  ## part of the page URL (/connections/datasources/edit/<uid>).
+  ##
+  datasource: ""
+  # datasource: P1809F7CD0C75ACF3
+
+  ## Grafana credentials
+  ## Use either a service account token (recommended) or basic auth, not both.
+  ## The token needs to read dashboards, alert rules and query the datasource, e.g. the Viewer role.
+  ## ref: https://grafana.com/docs/grafana/latest/administration/service-accounts/
+  ##
+  ## Note: the exporter only accepts credentials as command-line flags, so they are visible in
+  ## the container's process list to anyone who can exec into the pod.
+  ##
+  auth:
+    ## Authentication method: "apiKey" (service account token) or "basic" (user and password)
+    ##
+    type: apiKey
+
+    ## Service account token. Used when type is apiKey and existingSecret is empty.
+    ## Prefer existingSecret so the token is not stored in Helm values or release history.
+    ##
+    apiKey: ""
+    # apiKey: glsa_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx_xxxxxxxx
+
+    ## Username and password. Used when type is basic and existingSecret is empty.
+    ##
+    user: ""
+    password: ""
+
+    ## Name of an existing Secret in the release namespace holding the credentials.
+    ## When set, the chart creates no Secret and ignores apiKey, user and password above.
+    ## The Secret is not deleted on `helm uninstall`.
+    ##
+    ## For type apiKey, create it with:
+    ##   kubectl -n <namespace> create secret generic grafana-credentials \
+    ##     --from-literal=api-key=<token>
+    ##
+    ## For type basic, create it with:
+    ##   kubectl -n <namespace> create secret generic grafana-credentials \
+    ##     --from-literal=user=<user> --from-literal=password=<password>
+    ##
+    existingSecret: ""
+    # existingSecret: grafana-credentials
+
+    ## Keys to read from the Secret (existing or chart-created).
+    ## Change these to match a Secret you did not create with the commands above.
+    ##
+    secretKeys:
+      apiKey: api-key
+      user: user
+      password: password
+
+## Exporter settings, passed to the exporter as command-line flags
+## ref: https://github.com/parthivrmenon/metric_usage_exporter#configuration
+##
+exporter:
+  ## Number of top metrics (by series count) to analyze from the Prometheus TSDB status API
+  ##
+  tsdbMetricsLimit: 10000
+
+  ## Maximum number of unused metrics to export. Must be positive.
+  ##
+  metricsLimit: 50
+
+  ## Maximum number of unused labels to export. Must be positive.
+  ## Each label adds one sequential Prometheus query per scan, so raising this makes scans slower.
+  ##
+  labelsLimit: 10
+
+  ## How often to rescan Grafana and Prometheus in the background, as a Go duration (30s, 5m, 1h30m).
+  ## Scrapes return the latest completed scan, so data can be up to one interval old.
+  ##
+  scanInterval: 5m
+
+  ## Timeout for each HTTP request to Grafana, as a Go duration.
+  ## Prometheus queries also go through Grafana's datasource proxy, which has its own timeout
+  ## (30s by default); raising this above it has no effect on those queries.
+  ##
+  grafanaTimeout: 60s
+
+  ## Extra command-line flags for the exporter
+  ##
+  extraArgs: []
+  # - -some-flag=value
+
+## Extra environment variables for the exporter container
+## ref: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/
+##
+extraEnv: []
+# - name: HTTPS_PROXY
+#   value: http://proxy.example.com:3128
+
+## ServiceAccount for the exporter pod
+## The exporter makes no Kubernetes API calls, so it needs no RBAC.
+## ref: https://kubernetes.io/docs/concepts/security/service-accounts/
+##
+serviceAccount:
+  ## Create a ServiceAccount. If false, the pod uses `name` or the namespace's default.
+  ##
+  create: true
+
+  ## ServiceAccount name. Leave empty to generate it from the full name.
+  ##
+  name: ""
+
+  annotations: {}
+  # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/metric-usage-exporter
+
+  ## Mount the ServiceAccount's API token into the pod. Not needed by the exporter.
+  ##
+  automount: false
+
+## Extra annotations and labels for the pod
+##
+podAnnotations: {}
+# prometheus.io/scrape: "true"
+# prometheus.io/port: "10062"
+
+podLabels: {}
+# team: observability
+
+## Pod security context. Matches the image's distroless nonroot user (65532).
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+##
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+## Container security context
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+##
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+## Service exposing the /metrics endpoint
+## ref: https://kubernetes.io/docs/concepts/services-networking/service/
+##
+service:
+  type: ClusterIP
+
+  ## Port for both the Service and the container
+  ##
+  port: 10062
+
+  annotations: {}
+
+## Container resources
+## Memory grows with tsdbMetricsLimit and the number of dashboards and rules scanned.
+## ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+##
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+## Probes
+## The exporter has no health endpoint; /metrics is cheap because it serves the last scan's
+## result without running a new one.
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+##
+livenessProbe:
+  httpGet:
+    path: /metrics
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /metrics
+    port: http
+  periodSeconds: 10
+  timeoutSeconds: 5
+
+## ServiceMonitor for the Prometheus Operator
+## Requires the monitoring.coreos.com CRDs (e.g. from kube-prometheus-stack).
+## Without the operator, leave this disabled and add a scrape job yourself; it must set
+## `honor_labels: true`:
+##
+##   scrape_configs:
+##     - job_name: metric_usage_exporter
+##       honor_labels: true
+##       static_configs:
+##         - targets: ["<release>-metric-usage-exporter.<namespace>.svc:10062"]
+##
+## ref: https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.ServiceMonitor
+##
+serviceMonitor:
+  enabled: false
+
+  ## Namespace for the ServiceMonitor. Leave empty to use the release namespace.
+  ##
+  namespace: ""
+
+  ## Extra labels for the ServiceMonitor.
+  ## Your Prometheus only picks up ServiceMonitors matching its serviceMonitorSelector.
+  ## With kube-prometheus-stack that is usually the stack's release name.
+  ##
+  labels: {}
+  # release: kube-prometheus-stack
+
+  ## Scrape interval and timeout. The data only changes once per exporter.scanInterval,
+  ## so scraping much more often than that adds nothing.
+  ##
+  interval: 1m
+  scrapeTimeout: 30s
+
+  ## Keep the `job` label the exporter puts on each series (the job that originally collected
+  ## the metric). If false, Prometheus overwrites it with this scrape job's name and every
+  ## per-job breakdown collapses into one. Leave true.
+  ##
+  honorLabels: true
+
+  ## Relabel targets before scraping
+  ## ref: https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.RelabelConfig
+  ##
+  relabelings: []
+  # - targetLabel: cluster
+  #   replacement: prod-eu-1
+
+  ## Relabel or drop series after scraping
+  ##
+  metricRelabelings: []
+  # - sourceLabels: [__name__]
+  #   regex: metric_usage_unused_label_cardinality
+  #   action: drop
+
+## Scheduling
+## ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+##
+nodeSelector: {}
+# kubernetes.io/os: linux
+
+tolerations: []
+# - key: dedicated
+#   operator: Equal
+#   value: monitoring
+#   effect: NoSchedule
+
+affinity: {}
