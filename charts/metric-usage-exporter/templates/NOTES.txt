@@ -1,0 +1,19 @@
+metric-usage-exporter is scanning {{ .Values.grafana.url }} (datasource {{ .Values.grafana.datasource }}) every {{ .Values.exporter.scanInterval }}.
+
+Check the metrics:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "metric-usage-exporter.fullname" . }} {{ .Values.service.port }}
+  curl -s localhost:{{ .Values.service.port }}/metrics | grep metric_usage_up
+
+metric_usage_up stays 0 until the first scan finishes.
+{{- if not .Values.serviceMonitor.enabled }}
+
+To scrape it, add a job with honor_labels: true (required to keep the per-job `job` label):
+
+  - job_name: metric_usage_exporter
+    honor_labels: true
+    static_configs:
+      - targets: ["{{ include "metric-usage-exporter.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}"]
+
+or set serviceMonitor.enabled=true if you run the Prometheus Operator.
+{{- end }}
