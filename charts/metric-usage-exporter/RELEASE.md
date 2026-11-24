@@ -1,40 +1,24 @@
 # Releasing the Helm chart
 
 This is the checklist for publishing a chart version. The chart is released
-separately from the exporter (see the root [`RELEASE.md`](../../RELEASE.md)) and is
+separately from the exporter and is
 pushed as an OCI artifact to GHCR, next to the image:
 
 ```
 oci://ghcr.io/parthivrmenon/charts/metric-usage-exporter
 ```
 
-A pushed chart version is effectively permanent once anyone has pulled it. Never push
-the same version twice: bump `version` instead.
-
-## 1. Pick the versions
+## 1. Chart Versioning
 
 `Chart.yaml` carries two versions that move independently:
 
 - **`version`**: the chart's own version. Bump it on **every** change to anything in
-  this folder, following SemVer:
-  - patch (`0.1.0` → `0.1.1`): fixes and docs that don't change rendered output for
-    existing values
-  - minor (`0.1.0` → `0.2.0`): new values or features; existing values keep working
-  - major (`0.x` → `1.0.0`, or `1.x` → `2.0.0`): a value renamed or removed, or a
-    default that changes behaviour. While on `0.x`, a minor bump may break.
+  this folder, following SemVer
 - **`appVersion`**: the exporter image tag the chart deploys by default. Change it
   only to a version whose image is already on GHCR, and bump `version` along with it.
 
 When the exporter is released, release the image first, then bump `appVersion` here.
-If the release added, renamed or removed a flag, update `values.yaml` and
-`templates/deployment.yaml` in the same chart release.
 
-Update the `--version` and `version:` examples in [`README.md`](README.md) to the new
-chart version in the same commit:
-
-```bash
-grep -n '0\.[0-9]*\.[0-9]*' charts/metric-usage-exporter/README.md   # every hit should be the new version
-```
 
 Set the chart version once. Every step below uses it:
 
